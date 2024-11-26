@@ -47,3 +47,17 @@ Upload
 ------WebKitFormBoundaryNHtXWgyPKt1jS4A8--
 
 
+---------------------------------------------------------------------
+Le type de vulnérabilité exploité ici est lié à l'upload de fichier non sécurisé.
+Description :
+
+Dans ce cas, l'application web accepte des fichiers uploadés par l'utilisateur, mais ne valide pas correctement le type MIME du fichier. Bien qu'une vérification soit effectuée pour s'assurer que les fichiers sont des images, cette vérification repose uniquement sur le type MIME indiqué dans l'en-tête HTTP, qui peut être falsifié. En conséquence, un fichier malveillant comme un script PHP peut être déguisé en image en modifiant le type MIME (Content-Type).
+
+Lors de l'upload, l'application suppose que le fichier est une image (par exemple, image/jpeg), mais le contenu réel est un script PHP. Si ce fichier est ensuite accessible via le serveur et interprété comme du code, il peut être utilisé pour exécuter des commandes malveillantes, accéder à des fichiers sensibles, ou obtenir un accès non autorisé au serveur.
+Points clés :
+
+    Type MIME manipulable : L'en-tête Content-Type peut être modifié manuellement pour tromper le serveur.
+    Vérification insuffisante côté serveur : L'application ne valide pas correctement le contenu ou l'extension réelle du fichier.
+    Exécution de code malveillant : Une fois uploadé, le fichier peut être utilisé pour exécuter des commandes sur le serveur.
+
+Ce type de vulnérabilité est courant lorsque les développeurs ne mettent pas en œuvre des validations robustes sur les fichiers uploadés.
