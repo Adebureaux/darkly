@@ -11,4 +11,4 @@ And the website sent "Congratulaton!! The flag is : b12c4b2cb8094750ae121a676269
 
 A directory traversal (or path traversal) attack exploits insufficient security validation or sanitization of user-supplied file names, such that characters representing "traverse to parent directory" are passed through to the operating system's file system API. An affected application can be exploited to gain unauthorized access to the file system.
 
-A way to fix this vulnerability would be .. [To complete]
+To fix this vulnerability, use a Secure File Access Methods to avoid directly using user-supplied input in file system paths. Instead, map user inputs to a predefined set of file paths stored securely on the server. This way, even if a user attempts to perform directory traversal, they will not be able to access unauthorized files because the input is mapped to safe, predetermined file locations.

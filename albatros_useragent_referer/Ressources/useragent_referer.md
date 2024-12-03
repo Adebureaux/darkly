@@ -65,3 +65,5 @@ Un User-Agent est une chaîne de texte incluse dans les requêtes HTTP envoyées
     Débogage et Automatisation :
         Les outils comme curl ou wget utilisent des User-Agents personnalisés pour imiter des navigateurs ou applications dans le cadre d’automatisation ou de tests.
 
+Pour éviter cette vulnérabilité:
+Plutôt que de se fier uniquement aux en-têtes HTTP comme Referer et User-Agent, il faudrait ajouter une validation supplémentaire côté serveur pour vérifier l'authenticité des requêtes. Par exemple, utilisez des jetons CSRF (Cross-Site Request Forgery) pour s'assurer que les requêtes proviennent de sources légitimes et attendues.
