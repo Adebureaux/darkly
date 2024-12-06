@@ -5,4 +5,8 @@ In the http://192.168.1.32/?page=feedback page, there is a HTML form described a
   <input name="btnSign" type="Submit" value="Sign Guestbook" onclick="return checkForm();">
 </form>
 
-Trying multiple payload and find out that if the message contain a special character as : \ / `` '' | 
+Trying multiple payloads and find out that if the message contain only one character in the "txtName" or "txtMessage" field, it displays the flag.
+
+After a few tests, the flag is not displayed on all characters, we tried with many different. It's look like: "a", "e", "r", "t", "i", "p", "s", "l", "c" wich is an anagram of the word "particles".
+
+A way to fix this issue would be to satinize the input before sending it to the database. The server could easyly perform verifications about the length of the string and the charcaters that are present in it.
