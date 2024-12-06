@@ -28,4 +28,4 @@ The script find the username / password combination: "3d:shadow"
 http://192.168.1.32/?page=signin&username=3d&password=shadow&Login=Login#
 The flag is : b3a6e43ddf8b4bbb4125e5e7d23040433827759d4de1c04ea63907479a80a6b2
 
-A way to fix this vulnerability would be .. [To complete]
+A way to fix this vulnerability would be to set a up a rate limiting on the server-side. It would be better if the username / password couple is harder to bruteforce (more characters, specials characters ...).
