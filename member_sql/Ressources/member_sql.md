@@ -49,4 +49,4 @@ Decrypt the original password using https://hashes.com/en/decrypt/hash
 SHA256 on the lower case string "fortytwo" using https://emn178.github.io/online-tools/sha256.html
 10a16d834f9b1e4068b25c4c46fe0284e99e44dceaf08098fc83925ba6310ff5
 
-A way to fix this vulnerability would be .. [To complete]
+A way to fix this vulnerability would be to sanitize the input to avoid special characters in the request.
