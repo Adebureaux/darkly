@@ -1,27 +1,38 @@
-En cliquant sur born to sec tout en bas de la page principale
+## Exploiting Referer and User-Agent Headers on Darkly
+
+### Context
+
+By clicking on the "Born to Sec" link at the bottom of the main page:
+
+```
 http://192.168.1.33/?page=b7e44c7a40c5f80139f0a50f3650fb2bd8d00b0d24667c4c2ca32c88e13b758f
+```
 
-une page sur les albatros...
+You are redirected to a page about albatrosses. Inspecting the page’s source code reveals hidden comments containing crucial information:
 
-En affichant le code source de la page plein d'infos sont cachées tout en bas!
-
-Surtout 2:
+```html
 <!--
 You must come from : "https://www.nsa.gov/".
 -->
-et
 <!--
-Let's use this browser : "ft_bornToSec". It will help you a lot. 
+Let's use this browser : "ft_bornToSec". It will help you a lot.
 -->
-(tout à droite:)
+```
 
-A partir de là c'est simple!
-On intercepte la requete et on va lui rajouter un referer ("https://www.nsa.gov/") et un user_agent ("ft_bornToSec")
+---
 
+### Exploitation Steps
 
-Définit l'en-tête HTTP Referer pour simuler que vous venez du site de la NSA.
+#### 1. Analyzing the Comments
 
+- **Referer Requirement:** The page checks if the `Referer` header is set to `https://www.nsa.gov/`.
+- **User-Agent Requirement:** The page expects the `User-Agent` header to be set to `ft_bornToSec`.
 
+#### 2. Crafting the Request
+
+Intercept the request using a proxy tool (e.g., Burp Suite) or simulate it using a custom script. The required HTTP request headers are:
+
+```
 GET /?page=b7e44c7a40c5f80139f0a50f3650fb2bd8d00b0d24667c4c2ca32c88e13b758f HTTP/1.1
 Host: 192.168.1.33
 Accept-Language: fr-FR,fr;q=0.9
@@ -32,38 +43,60 @@ Accept-Encoding: gzip, deflate, br
 Referer: https://www.nsa.gov/
 Cookie: I_am_admin=68934a3e9455fa72420237eb05902327
 Connection: keep-alive
+```
+
+Alternatively, use `curl` to send the request:
+
+```bash
+curl -X GET "http://192.168.1.33/?page=b7e44c7a40c5f80139f0a50f3650fb2bd8d00b0d24667c4c2ca32c88e13b758f" \
+     -H "User-Agent: ft_bornToSec" \
+     -H "Referer: https://www.nsa.gov/" \
+     -H "Cookie: I_am_admin=68934a3e9455fa72420237eb05902327"
+```
+
+#### 3. Result
+
+Upon meeting the required headers, access is granted, revealing the desired content or flag.
+
+---
+
+### Understanding User-Agent
+
+A **User-Agent** is a string included in HTTP requests to identify the client (browser, application, or script) to the server. It typically contains information about:
+
+- The client software (e.g., web browser, automated tool like `curl`).
+- The operating system (e.g., Windows, Linux, Android).
+- The software version or device type.
+
+#### Common Uses of User-Agent:
+
+1. **Customizing Server Responses:**
+   - Websites can serve optimized content based on the User-Agent (e.g., mobile vs. desktop versions).
+   - Search engines like Googlebot receive specific content for indexing.
+
+2. **Tracking and Analytics:**
+   - Administrators use User-Agent data to analyze visitor behavior, including browser and OS usage.
+
+3. **Conditional Access:**
+   - Servers may restrict access to specific User-Agents to enforce security or compatibility.
+
+4. **Debugging and Automation:**
+   - Tools like `curl` or `wget` use User-Agent strings to mimic browsers during testing or automation tasks.
+
+---
+
+### Preventing Vulnerabilities
+
+To prevent this type of vulnerability, servers should avoid relying solely on HTTP headers such as `Referer` and `User-Agent` for validation. Instead, implement the following:
+
+1. **Server-Side Validation:**
+   - Verify the authenticity of requests using server-side checks.
+   - Use CSRF tokens to ensure requests originate from legitimate sources.
+
+2. **Avoid Over-Reliance on Headers:**
+   - HTTP headers like `Referer` and `User-Agent` are client-controlled and can be spoofed.
+
+3. **Enhanced Logging and Monitoring:**
+   - Log header data to identify unusual patterns or malicious activities.
 
 
-
-
-
--------------------------
---------------------------------------------------------
---------------------------
-
-Qu'est ce au'un user_agent:
-Un User-Agent est une chaîne de texte incluse dans les requêtes HTTP envoyées par un navigateur, une application ou un script client pour s'identifier auprès d'un serveur. Cette chaîne contient des informations sur :
-
-    Le logiciel client utilisé (navigateur web, outil automatisé comme curl, etc.).
-    Le système d'exploitation du client (par exemple, Windows, Linux, Android).
-    La version du logiciel ou du système.
-
-À quoi sert un User-Agent ?
-
-    Personnalisation de la réponse du serveur :
-        Les serveurs web peuvent adapter le contenu qu'ils renvoient en fonction du User-Agent. Par exemple :
-            Un site web peut fournir une version optimisée pour mobile si le User-Agent indique que le client est un navigateur mobile.
-            Des outils comme Googlebot (utilisés par les moteurs de recherche) reçoivent un contenu spécifique pour l'indexation.
-
-    Suivi et Analyse :
-        Les administrateurs de sites utilisent les User-Agents pour analyser les visiteurs de leur site (par exemple, pour savoir quel navigateur ou système d'exploitation est le plus utilisé).
-
-    Restrictions et accès conditionnel :
-        Un serveur peut restreindre l'accès à certains contenus ou fonctionnalités en vérifiant le User-Agent. Par exemple :
-            Autoriser seulement des navigateurs spécifiques ou des outils reconnus (comme un certain User-Agent dans votre cas).
-
-    Débogage et Automatisation :
-        Les outils comme curl ou wget utilisent des User-Agents personnalisés pour imiter des navigateurs ou applications dans le cadre d’automatisation ou de tests.
-
-Pour éviter cette vulnérabilité:
-Plutôt que de se fier uniquement aux en-têtes HTTP comme Referer et User-Agent, il faudrait ajouter une validation supplémentaire côté serveur pour vérifier l'authenticité des requêtes. Par exemple, utilisez des jetons CSRF (Cross-Site Request Forgery) pour s'assurer que les requêtes proviennent de sources légitimes et attendues.
