@@ -1,61 +1,77 @@
-Alors dans cette faille, on a utilisé robots.txt:
+## Exploitation of a Vulnerability via `robots.txt`
 
+### Vulnerability Description
+
+In this exploitation, we leveraged the `robots.txt` file located at the following address:
+
+```
 http://192.168.1.33/robots.txt
+```
 
+Content of `robots.txt`:
+
+```
 User-agent: *
 Disallow: /whatever
 Disallow: /.hidden
+```
 
-Ici nous nous interesserons au dossier /.hidden
-Bienvenue dans l'enfer des README!!!
+The `Disallow: /.hidden` directive tells web crawlers not to index this directory. However, this directive also signals attackers about potentially "interesting" areas on the server. We targeted the **/.hidden** directory for further investigation.
 
+### Directory Exploration
+
+Upon accessing `/hidden`, the following content was revealed:
+
+```
 Index of /.hidden/
 
 ../
-amcbevgondgcrloowluziypjdh/                        29-Jun-2021 18:15                   -
-bnqupesbgvhbcwqhcuynjolwkm/                        29-Jun-2021 18:15                   -
-ceicqljdddshxvnvdqzzjgddht/                        29-Jun-2021 18:15                   -
-doxelitrqvhegnhlhrkdgfizgj/                        29-Jun-2021 18:15                   -
-eipmnwhetmpbhiuesykfhxmyhr/                        29-Jun-2021 18:15                   -
-ffpbexkomzbigheuwhbhbfzzrg/                        29-Jun-2021 18:15                   -
-ghouhyooppsmaizbmjhtncsvfz/                        29-Jun-2021 18:15                   -
-hwlayeghtcotqdigxuigvjufqn/                        29-Jun-2021 18:15                   -
-isufpcgmngmrotmrjfjonpmkxu/                        29-Jun-2021 18:15                   -
-jfiombdhvlwxrkmawgoruhbarp/                        29-Jun-2021 18:15                   -
-kpibbgxjqnvrrcpczovjbvijmz/                        29-Jun-2021 18:15                   -
-ldtafmsxvvydthtgflzhadiozs/                        29-Jun-2021 18:15                   -
-mrucagbgcenowkjrlmmugvztuh/                        29-Jun-2021 18:15                   -
-ntyrhxjbtndcpjevzurlekwsxt/                        29-Jun-2021 18:15                   -
-oasstobmotwnezhscjjopenjxy/                        29-Jun-2021 18:15                   -
-ppjxigqiakcrmqfhotnncfqnqg/                        29-Jun-2021 18:15                   -
-qcwtnvtdfslnkvqvzhjsmsghfw/                        29-Jun-2021 18:15                   -
-rlnoyduccpqxkvcfiqpdikfpvx/                        29-Jun-2021 18:15                   -
-sdnfntbyirzllbpctnnoruyjjc/                        29-Jun-2021 18:15                   -
-trwjgrgmfnzarxiiwvwalyvanm/                        29-Jun-2021 18:15                   -
-urhkbrmupxbgdnntopklxskvom/                        29-Jun-2021 18:15                   -
-viphietzoechsxwqacvpsodhaq/                        29-Jun-2021 18:15                   -
-whtccjokayshttvxycsvykxcfm/                        29-Jun-2021 18:15                   -
-xuwrcwjjrmndczfcrmwmhvkjnh/                        29-Jun-2021 18:15                   -
-yjxemfsgdlkbvvtjiylhdoaqkn/                        29-Jun-2021 18:15                   -
-zzfzjvjsupgzinctxeqtzzdzll/                        29-Jun-2021 18:15                   -
-README                                             29-Jun-2021 18:15                  34
+amcbevgondgcrloowluziypjdh/    29-Jun-2021 18:15
+bnqupesbgvhbcwqhcuynjolwkm/    29-Jun-2021 18:15
+...
+README                         29-Jun-2021 18:15    34
+```
 
-On a une arborescende de ce type sur plusieurs niveaux:
-Index of /.hidden/amcbevgondgcrloowluziypjdh/acbnunauucfplzmaglkvqgswwn/ayuprpftypqspruffmkuucjccv/
+This directory contains a complex hierarchical structure with multiple subdirectories. Each subdirectory contains a `README` file with messages like: *"Ask your neighbor to the right/left/above..."*.
 
-../
-README                                             29-Jun-2021 18:15                  34
+### Automation
 
+Manually exploring each subdirectory would be extremely tedious. Here are the steps we followed to automate the process:
 
-Et dans chaque README des choses du type : demande à ton voison de droite/gauche/dessus...
+#### Step 1: Download All Files
 
-Bon on va pas pouvoir tous les regarder manuellement!
-Etape 1: Script pour tous les télécharger
-Etape 2: Script pour chercher le mot flag ou des chiffres dans un de ces readme!
+We used a script to crawl through the directory structure and download all files available within the subdirectories.
 
-README18279 => 18279 auront été téléchargés!!!!
-Mais celui qui nous intéresse est celui-ci:
+#### Step 2: Search for the Flag
 
+After downloading, a second script was executed to search for keywords such as **flag** or specific patterns within the `README` files.
+
+Result of the search:
+
+```
+README18279 => 18279 files downloaded.
 Match found in ./downloaded_files/README15694:
 flag
-----
+```
+
+The file `README15694` contained the keyword **flag**, which was our objective.
+
+---
+
+### How to Protect Against This Vulnerability
+
+1. **Restrict Access to Sensitive Directories:**
+   - Prevent public access to directories like **/.hidden** by properly configuring permissions.
+   - Use server rules (e.g., `.htaccess` for Apache) to restrict access.
+
+2. **Use a Judicious `robots.txt` File:**
+   - Avoid listing sensitive directories in `robots.txt`.
+   - Instead, use alternative methods such as `noindex` meta tags or IP restrictions to secure critical areas.
+
+3. **Monitor Server Access:**
+   - Implement monitoring tools to detect unusual access to non-indexed directories.
+
+5. **Obfuscate Sensitive Directories:**
+   - Rename sensitive directories with non-intuitive or dynamic names to prevent accidental or intentional discovery.
+
+---
