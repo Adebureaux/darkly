@@ -1,39 +1,86 @@
-Description du problème
+# Write-Up: Vote Manipulation Exploit
 
-on est face à un formulaire de vote où les utilisateurs peuvent voter en attribuant une note à différents sujets (entre 1 et 10). Cependant, en interceptant la requête HTTP avec un outil comme Burp Suite, on remarque que les restrictions côté client (limite entre 1 et 10) ne sont pas appliquées côté serveur.
-Étapes de la solution
+## Exploit Overview
 
-    Observation initiale :
-        En analysant le formulaire via notre navigateur, on constate que les notes étaient limitées (1 à 10).
-        
-    Interception et modification de la requête :
-        on intercepte la requête POST envoyée au serveur lors de l'envoi du vote :
+The vulnerability exploited here relates to insufficient server-side validation in a voting system. Although the client-side enforces a voting range of 1 to 10, the server does not verify these constraints, allowing arbitrary values to be submitted.
 
-    POST /?page=survey HTTP/1.1
-    Host: 192.168.1.33
-    Content-Length: 16
-    Content-Type: application/x-www-form-urlencoded
+### Steps to Exploit
 
-    sujet=2&valeur=2
+#### 1. Initial Observation
 
-   On modifie la valeur valeur=2 pour valeur=100000000000 dans le corps de la requête.
+- Through the browser, users interact with a voting form that allows them to assign a score (1 to 10) to different topics.
+- Client-side validation restricts the input to a range between 1 and 10.
 
-Soumission et obtention du flag :
+#### 2. Interception and Request Modification
 
-    En envoyant cette requête modifiée, on a réussi à "voter" avec une valeur démesurément élevée.
-    Le serveur, ne validant pas la valeur côté serveur, a accepté la requête et a généré le flag en retour.
+- Using an interception tool like Burp Suite, we capture the POST request sent when a vote is submitted:
 
-The flag is 03a944b434d5baff05f46c4bede5792551a2595574bcafc9a6e25f67c382ccaa
+```
+POST /?page=survey HTTP/1.1
+Host: 192.168.1.33
+Content-Length: 16
+Content-Type: application/x-www-form-urlencoded
 
-Prévention
+sujet=2&valeur=2
+```
 
-Pour éviter ce type de vulnérabilité, appliquez ces bonnes pratiques :
+- In the body of the request, the parameter `valeur=2` specifies the vote value. This value is changed to an exaggerated number, such as `100000000000`.
 
-    Validation côté serveur :
-        Limitez les valeurs des paramètres à des plages spécifiques (ici, entre 1 et 10) via des vérifications serveur.
+#### 2BIS. Interception et modification de la requête avec CURL
 
-    Exemple en PHP :
+Plutôt que d'utiliser un outil comme Burp Suite, on peut soumettre une requête POST directement avec **cURL** pour modifier la valeur.
 
+La commande suivante reproduit l'exploitation :
+
+```bash
+curl -X POST "http://192.168.1.33/?page=survey" \
+-H "Content-Type: application/x-www-form-urlencoded" \
+--data "sujet=2&valeur=100000000000"
+```
+
+### Explication des paramètres :
+
+- **`-X POST`** : Spécifie que la requête est de type POST.
+
+- **`-H "Content-Type: application/x-www-form-urlencoded"`** : Définit l'en-tête `Content-Type` pour indiquer le type de données envoyées.
+
+- **`--data "sujet=2&valeur=100000000000"`** : Indique les données à envoyer, ici `sujet=2` et une valeur hors limites `valeur=100000000000`.
+
+#### 3. Send to the server
+
+- After modifying the request, we submit it to the server.
+
+- Due to the lack of server-side validation, the server accepts the invalid value and processes the vote.
+
+#### 4. Obtaining the Flag
+
+- Upon processing the manipulated request, the server generates and returns the flag.
+
+## Vulnerability Description
+
+The root cause of this vulnerability is the absence of proper server-side validation for input parameters. While the client-side enforces constraints, these can be bypassed by directly interacting with the HTTP request.
+
+### Key Points
+
+- **Client-Side Validation Bypass:** Client-side validation can be easily circumvented by modifying HTTP requests.
+- **Lack of Server-Side Validation:** The server should enforce constraints to ensure the validity of submitted data.
+- **Impact:** By submitting out-of-range values, users can manipulate the voting system and potentially access unauthorized functionality or data.
+
+## Mitigation Strategies
+
+To prevent this type of exploit, implement the following measures:
+
+### 1. Server-Side Validation
+
+Ensure all input parameters are validated on the server side. For example, in PHP:
+
+```php
 if ($valeur < 1 || $valeur > 10) {
     die("Valeur invalide !");
 }
+```
+
+### 2. Input Sanitization
+
+Sanitize and validate all incoming data to ensure it adheres to the expected format and range.
+
