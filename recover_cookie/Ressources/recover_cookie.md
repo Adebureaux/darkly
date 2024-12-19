@@ -35,4 +35,4 @@ Step 7: Analyze the Response
 After sending the POST request with the modified cookie, the response contain an altert that displays the flag:
 <script>alert('Good job! Flag : df2eb4ba34ed059a1e3e89ff4dfc13445f104a1a52295214def1c4fb1693a5c3');</script>
 
-A way to fix this vulnerability would be to use JWT instead of a handmade "I_am_admin" cookie.
+A way to fix this vulnerability would be to use JWT (with a strong secret) instead of a handmade "I_am_admin" cookie.
